@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>ex01 Heroi</title>
+<!-- fontes: troque pelas do projeto (ou use fontes instaladas); o renderizador espera document.fonts.ready -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400;1,6..72,600&display=block" rel="stylesheet">
+<link rel="stylesheet" href="lib.css">
+<style>
+  html,body{height:100%;background:#000;overflow:hidden}
+  body{display:grid;place-items:center}
+  /* o quadro segue o formato da cena (--fw/--fh são definidos pelo motor) */
+  #f{width:min(100vw,calc(100vh*var(--fw)/var(--fh)))}
+</style>
+</head>
+<body>
+<div id="f" class="frame"></div>
+<script src="lib.js"></script>
+<script src="scenes.js"></script>
+<script src="merged.js"></script>
+<script>boot('ex01');</script>
+</body>
+</html>

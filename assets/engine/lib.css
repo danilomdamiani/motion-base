@@ -1,0 +1,63 @@
+/* motion-base · estilos do motor. Troque os TOKENS abaixo (e o TOKENS do lib.js, que pinta o fundo) para a identidade do projeto. */
+:root{
+  /* fontes: use fontes instaladas ou carregue pelo <link> da página (Google Fonts). Papéis: display (títulos, números) e text (corpo, UI) */
+  --font-display:"Newsreader","Georgia","Times New Roman",serif;
+  --font-text:"Inter",system-ui,"Segoe UI",sans-serif;
+  /* cores */
+  --fg:#fff;                      /* texto no escuro */
+  --fg-dim:rgba(255,255,255,.7);
+  --ink:#16171a;                  /* texto no claro */
+  --ink-dim:rgba(22,23,26,.62);
+  --accent:#8fb0ff;               /* uma cor de destaque (rótulos, linha, chip) */
+  --accent-ink:#0d1117;           /* texto sobre o destaque */
+  --fw:3840; --fh:2160;           /* formato (unidades de design); o motor troca por cena */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{text-rendering:geometricPrecision;-webkit-font-smoothing:antialiased}
+/* texto herda a cor do modo (escuro = --fg, claro = --ink): quem não define cor não fica preto no escuro */
+.frame{color:var(--fg);font-family:var(--font-text)}
+.frame.light{color:var(--ink)}
+.serif{font-family:var(--font-display)}
+.sans{font-family:var(--font-text)}
+
+/* quadro: proporção do formato; tudo dentro em cqw (igual em 600 px ou 3840 px) */
+.frame{position:relative;width:100%;aspect-ratio:var(--fw)/var(--fh);container-type:inline-size;overflow:hidden;background:#000;isolation:isolate}
+.frame .bg,.frame .view,.frame .grain{position:absolute;inset:0}
+.frame .bg{isolation:isolate}
+.frame .view{overflow:hidden;perspective:170cqw;perspective-origin:50% 50%}
+.frame .hud{pointer-events:none}
+.world{position:absolute;left:0;top:0;width:100cqw;height:calc(100cqw*var(--fh)/var(--fw));transform-origin:0 0}
+.at{position:absolute;translate:-50% -50%;white-space:nowrap}
+.at.l{translate:0 -50%;transform-origin:0 50%}
+.at.r{translate:-100% -50%;transform-origin:100% 50%}
+.geo{position:absolute;left:0;top:0;width:100cqw;height:calc(100cqw*var(--fh)/var(--fw));overflow:visible;pointer-events:none}
+.ic svg{width:100%;height:100%;display:block}
+
+/* fundo: pintado por paintBg() em lib.js (canvas .bgc, dither antes de quantizar). Os degradês abaixo são só reserva por trás dele. */
+.frame .bg canvas.bgc{position:absolute;inset:0;width:100%;height:100%;display:block}
+.frame.dark .bg{background:radial-gradient(ellipse 115% 150% at 68.7% 153.7%,#34373e 0%,#0b0c0e 100%)}
+.frame.light .bg{background:#f0f0ed}
+/* grade fina fixa opcional no claro (desligue com nogrid: true na cena) */
+.frame.light .bg::after{content:"";position:absolute;inset:0;background-size:3.125cqw 3.125cqw;
+  background-image:linear-gradient(to right,rgba(22,23,26,.06) .06cqw,transparent .06cqw),linear-gradient(to bottom,rgba(22,23,26,.06) .06cqw,transparent .06cqw);
+  -webkit-mask-image:radial-gradient(ellipse 58% 66% at 50% 54%,#000 0%,transparent 78%);mask-image:radial-gradient(ellipse 58% 66% at 50% 54%,#000 0%,transparent 78%)}
+.frame.light.nogrid .bg::after{display:none}
+
+/* grão: ruído CINZA CONTÍNUO e suave (sem pontinhos duros), mistura 'overlay' (média neutra: não clareia nem escurece) com opacidade baixa.
+   O lib.js move o background-position a cada 1/GRAIN_FPS s (determinístico por t) para o grão "se mexer". Mais forte: suba a opacidade. */
+.grain{pointer-events:none;mix-blend-mode:overlay;opacity:.14;background-size:15.6cqw;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n' color-interpolation-filters='sRGB' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1'/><feGaussianBlur stdDeviation='.45'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.frame.light .grain{opacity:.1}
+
+/* tipografia utilitária */
+.tglow{color:var(--fg);text-shadow:0 0 .9cqw rgba(255,255,255,.4),0 0 2.6cqw rgba(255,255,255,.16)}
+.accent{color:var(--accent)}
+.tnum{font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;white-space:nowrap;font-family:var(--font-text);font-weight:600;letter-spacing:.02em;color:var(--accent-ink);font-variant-numeric:tabular-nums;
+  background:radial-gradient(60% 130% at 50% 0%,rgba(255,255,255,.4),rgba(255,255,255,0) 72%),var(--accent)}
+.label{font-family:var(--font-text);font-weight:500;letter-spacing:.26em;text-transform:uppercase;color:var(--accent)}
+
+/* camadas (uma por cena; duas durante uma transição). Sem will-change: camada composta lembra a rasterização anterior e o texto parado "treme". */
+.lay{position:absolute;inset:0;transform-origin:50% 50%;transform-style:preserve-3d}
+.lay .hud{position:absolute;inset:0;pointer-events:none}
+.rig{position:absolute;inset:0;transform-origin:50% 50%}

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Storyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400;1,6..72,600&display=block" rel="stylesheet">
+<link rel="stylesheet" href="lib.css">
+<style>
+:root{--page:#0d0e10;--line:rgba(255,255,255,.09);--tx:#e8e9ec;--mut:#8b8d93;--soft:#bcbec4}
+html{background:var(--page);color:var(--tx);font:15px/1.5 var(--font-text);scroll-behavior:smooth}
+body{padding:0 clamp(16px,3vw,56px) 120px}
+header.top{padding:52px 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{color:var(--mut);font-size:13px}
+h1{font:400 clamp(40px,5vw,72px)/1.02 var(--font-display);margin:6px 0 18px}
+h1 i{color:var(--accent)}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 32px;color:var(--soft);font-size:13px;max-width:1300px}
+.rules b{color:var(--tx);font-weight:500;display:block}
+.rail{display:flex;gap:3px;margin-top:28px;height:50px}
+.rail a{min-width:0;border-radius:4px;padding:6px 8px;text-decoration:none;font-size:11px;line-height:1.25;display:flex;flex-direction:column;justify-content:space-between;font-variant-numeric:tabular-nums;overflow:hidden}
+.rail a b{font:400 17px/1 var(--font-display)}
+.rail a.dark{background:#1b1c1f;color:var(--accent);box-shadow:inset 0 2px 0 var(--accent)}
+.rail a.light{background:#f0f0ed;color:#16171a}
+.sb{display:grid;grid-template-columns:270px minmax(0,1fr);gap:38px;padding:46px 0;border-bottom:1px solid var(--line);scroll-margin-top:8px}
+.sb aside{position:sticky;top:24px;align-self:start}
+.num{font:400 66px/1 var(--font-display);color:var(--accent)}
+.tag{display:inline-block;margin:14px 0 10px;padding:3px 9px;border-radius:4px;font-size:12px;font-weight:500}
+.tag.dark{background:#1b1c1f;color:var(--accent);box-shadow:inset 0 0 0 1px rgba(143,176,255,.4)}
+.tag.light{background:#f0f0ed;color:#16171a}
+.sb h2{font:400 30px/1.1 var(--font-display)}
+.tcx{color:var(--mut);font-size:13px;margin-top:6px;font-variant-numeric:tabular-nums}
+.say{margin-top:16px;color:var(--soft);font:italic 16px/1.4 var(--font-display)}
+.txt{margin-top:14px;font-size:13px}
+.txt span{display:block;color:var(--mut);font-size:12px}
+.open{display:inline-block;margin-top:16px;color:var(--accent);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr));gap:24px 18px;align-items:start}
+figure .frame{border-radius:6px;cursor:pointer}
+figcaption{padding:10px 2px 0;font-size:13px;color:var(--soft)}
+.row{display:flex;gap:10px;align-items:baseline;font-variant-numeric:tabular-nums}
+.row b{color:var(--tx);font-weight:600}
+.row span{color:var(--accent)}
+.row em{font-style:normal;color:var(--mut);margin-left:auto;text-align:right}
+@media(max-width:900px){.sb{grid-template-columns:1fr;gap:20px}.sb aside{position:static}}
+</style>
+</head>
+<body>
+<header class="top">
+  <p class="eyebrow" id="eyebrow"></p>
+  <h1 id="h1">Storyboard</h1>
+  <div class="rules" id="rules"></div>
+  <nav class="rail" id="rail"></nav>
+  <p id="mg" style="margin-top:14px;font-size:13px;color:var(--soft)">Versões unidas (mesmo fundo, uma peça só): </p>
+</header>
+<main id="main"></main>
+<script src="lib.js"></script>
+<script src="scenes.js"></script>
+<script src="merged.js"></script>
+<script>
+if(typeof PROJECT!=='undefined'){eyebrow.textContent=PROJECT.eyebrow||'';h1.innerHTML=PROJECT.title||'Storyboard';rules.innerHTML=(PROJECT.rules||[]).map(([k,v])=>`<div><b>${k}</b>${v}</div>`).join('')}
+const main=document.getElementById('main'),rail=document.getElementById('rail'),jobs=[];
+const fmtT=t=>String(t).replace('.',',');
+ORDER.forEach(id=>{const S=SCENES[id],k=S.kind.split(' ')[0];
+  rail.insertAdjacentHTML('beforeend',`<a href="#${id}" class="${k}" style="flex:${S.dur}"><b>${S.n}</b><span>${S.dur} s</span></a>`);
+  const fig=S.beats.map(([t,c,n],i)=>`<figure><div class="frame" data-id="${id}" data-t="${t}"></div><figcaption><div class="row"><b>${S.n}·${i+1}</b><span>${fmtT(t)} s</span><em>${c}</em></div><p>${n}</p></figcaption></figure>`).join('');
+  main.insertAdjacentHTML('beforeend',`<section class="sb" id="${id}"><aside><div class="num">${S.n}</div><div class="tag ${k}">${k==='dark'?'Fundo escuro':'Fundo claro'}${S.format?` · ${S.format[0]}×${S.format[1]}`:''}</div><h2>${S.title}</h2><p class="tcx">${S.src?S.src+'<br>':''}${fmtT(S.dur)} s</p><p class="say">${S.say||''}</p><p class="txt"><span>Texto na tela</span>${S.txt||''}</p><a class="open" href="player.html?s=${id}">▶ abrir animação</a><p class="tcx">${S.file}.html</p></aside><div class="grid">${fig}</div></section>`)});
+MERGED.forEach(id=>document.getElementById('mg').insertAdjacentHTML('beforeend',`<a href="player.html?s=${id}" style="color:var(--accent);margin-right:18px">▶ ${SCENES[id].title} · ${fmtT(SCENES[id].dur)} s</a>`));
+document.fonts.ready.then(()=>document.querySelectorAll('.frame[data-id]').forEach(f=>{mount(f,f.dataset.id)(+f.dataset.t);f.onclick=()=>location.href=`player.html?s=${f.dataset.id}&t=${f.dataset.t}`}));
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400;1,6..72,600&display=block" rel="stylesheet">
+<link rel="stylesheet" href="lib.css">
+<style>
+html,body{height:100%;background:#0d0e10;color:#e8e9ec;font:14px/1.4 var(--font-text);overflow:hidden}
+body{display:grid;grid-template-rows:1fr auto}
+.stage{display:grid;place-items:center;min-height:0;padding:14px}
+#f{width:min(100%,calc((100vh - 96px)*var(--fw)/var(--fh)));border-radius:6px}
+.bar{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.09)}
+.bar button,.bar a{background:#1a1b1e;color:#e8e9ec;border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:7px 12px;font:inherit;cursor:pointer;text-decoration:none}
+.bar input{flex:1;accent-color:var(--accent)}
+.bar b{font:400 20px var(--font-display);color:var(--accent);min-width:15ch}
+.bar span{font-variant-numeric:tabular-nums;color:#8b8d93;min-width:11ch;text-align:right}
+</style>
+</head>
+<body>
+<div class="stage"><div id="f" class="frame"></div></div>
+<div class="bar">
+  <a href="storyboard.html">← storyboard</a>
+  <button id="prev">‹</button><b id="name"></b><button id="next">›</button>
+  <button id="pp">pausa</button>
+  <input id="sl" type="range" min="0" max="1" step="0.001" value="0">
+  <span id="tm"></span>
+</div>
+<script src="lib.js"></script>
+<script src="scenes.js"></script>
+<script src="merged.js"></script>
+<script>
+const ALL=ORDER.concat(MERGED);const P=new URLSearchParams(location.search);let id=P.get('s')||ALL[0],t=+(P.get('t')||0),play=!P.has('t'),last=0,r,S;
+const $=i=>document.getElementById(i);
+function load(){S=SCENES[id];r=mount($('f'),id);$('name').textContent=S.n+' · '+S.title;$('sl').max=S.dur;history.replaceState(0,'','?s='+id)}
+function show(){r(t);$('sl').value=t;$('tm').textContent=t.toFixed(2)+' / '+S.dur+' s'}
+function go(d){const i=ALL.indexOf(id);id=ALL[(i+d+ALL.length)%ALL.length];t=0;load();show()}
+$('prev').onclick=()=>go(-1);$('next').onclick=()=>go(1);
+$('pp').onclick=()=>{play=!play;$('pp').textContent=play?'pausa':'play'};
+$('sl').oninput=e=>{t=+e.target.value;play=false;$('pp').textContent='play';show()};
+addEventListener('keydown',e=>{if(e.key===' '){e.preventDefault();$('pp').click()}else if(e.key==='ArrowRight'){t=Math.min(S.dur,t+1/60);play=false;show()}else if(e.key==='ArrowLeft'){t=Math.max(0,t-1/60);play=false;show()}else if(e.key==='PageDown')go(1);else if(e.key==='PageUp')go(-1)});
+load();$('pp').textContent=play?'pausa':'play';
+document.fonts.ready.then(()=>{(function loop(now){const dt=last?(now-last)/1000:0;last=now;if(play){t+=dt;if(t>S.dur+.8)t=0}show();raf=requestAnimationFrame(loop)})(performance.now())});
+</script>
+</body>
+</html>

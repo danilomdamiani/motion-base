@@ -1,0 +1,174 @@
+<!doctype html>
+<!--
+  motion-base · página "design → animação" (a partir de um layout exportado do Figma/SVG).
+  Uma página autônoma (sem o motor de cenas): camadas de fundo + linhas de texto posicionadas pela LINHA DE BASE do design +
+  botão que abre com wipe + grid/grão opcionais. Contrato do renderizador: window.DUR, window.render(t) determinística, raf cancelável.
+  Como usar: veja references/svg-to-motion.md. O que trocar está marcado com  >>> TROQUE.
+  Abrir em http://localhost (python -m http.server):  ?t=2.5 congela um instante · ?ref=ref.svg sobrepõe o design original (conferência)
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Peça · 9:16</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- >>> TROQUE: fontes do design (ou use fontes instaladas) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700&family=Newsreader:ital,opsz,wght@1,6..72,600&display=block" rel="stylesheet">
+<style>
+  :root{--bg0:#4a5058;--bg1:#24292f;--fg:#fff;--accent:#e93323;--accent-ink:#fff;
+        --font-text:'Inter',system-ui,sans-serif;--font-display:'Newsreader','Georgia',serif}
+  html,body{margin:0;height:100%;background:#111;overflow:hidden}
+  /* >>> TROQUE: proporção do design (1080/1920 = 9:16 · 1080/1080 = 1:1 · 1920/1080 = 16:9) e o mesmo número em --u */
+  #f{position:relative;height:100%;aspect-ratio:1080/1920;margin:0 auto;overflow:hidden;container-type:inline-size;background:var(--bg1)}
+  .stage{--u:calc(100cqw / 1080);position:absolute;inset:0}      /* 1u = 1px do design original */
+  .layer{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+
+  /* texto. SEM will-change: camada composta lembra a rasterização anterior e o texto parado treme */
+  .t{position:absolute;left:0;width:100%;text-align:center;white-space:nowrap;color:var(--fg);font-family:var(--font-text)}
+  .hg{font-weight:700;font-size:calc(var(--u)*94);line-height:calc(var(--u)*97);letter-spacing:-.02em}   /* >>> TROQUE tamanhos (ver fit-fonts.mjs) */
+  .hs{font-family:var(--font-display);font-style:italic;font-weight:600;letter-spacing:0}
+  .bd{font-weight:400;font-size:calc(var(--u)*48);line-height:calc(var(--u)*60)}
+
+  /* botão: paralelogramo com wipe de borda macia + sombra curta e sombra larga */
+  .btn{position:absolute;inset:0}
+  .pill{position:absolute;left:calc(var(--u)*230);top:calc(var(--u)*1252);width:calc(var(--u)*660);height:calc(var(--u)*120);
+        background:var(--accent);clip-path:polygon(7% 0,100% 0,96% 100%,0 100%);
+        filter:drop-shadow(0 calc(var(--u)*6) calc(var(--u)*5) rgba(0,0,0,.22)) drop-shadow(0 calc(var(--u)*30) calc(var(--u)*34) rgba(0,0,0,.25))}
+  .lbl{text-align:left;width:auto;left:calc(var(--u)*340);color:var(--accent-ink);font-weight:600;font-size:calc(var(--u)*38);line-height:calc(var(--u)*50);letter-spacing:-.02em}
+
+  /* grão: ruído cinza contínuo e suave, 'overlay' (média neutra), opacidade baixa. SVG feTurbulence; o seed muda por quadro */
+  .grain{mix-blend-mode:overlay;opacity:.14}
+
+  #ref{position:absolute;inset:0;width:100%;height:100%;opacity:.5;display:none;pointer-events:none}
+  .showref #ref{display:block}
+</style>
+</head>
+<body>
+<div id="f"><div class="stage">
+
+  <!-- fundo: canvas com dither (anti-banding); troque por <video id="bg" src="fundo.mp4" muted playsinline> se houver vídeo de fundo.
+       Com vídeo: .stage > video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover} e renderize com --video --bg ... --loop <s> -->
+  <canvas id="bgc" class="layer"></canvas>
+
+  <!-- grid opcional: as linhas verticais andam para a esquerda; traço largo + blur (sem flicker). Desligue com CFG.grid = null -->
+  <svg class="layer" viewBox="0 0 1080 1920" fill="none" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="gridFade" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(540 1335) scale(754 835)"><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></radialGradient>
+    <filter id="soft" x="-3" y="-3" width="1086" height="1926" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation=".9"/></filter></defs>
+    <path id="gridPath" d="" stroke="url(#gridFade)" stroke-width="2" stroke-opacity=".46" opacity=".2" filter="url(#soft)"/></svg>
+
+  <!-- grão -->
+  <svg class="layer grain" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg"><defs>
+    <filter id="grain" x="0" y="0" width="1080" height="1920" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feTurbulence id="grainSeed" type="fractalNoise" baseFrequency=".7" numOctaves="2" stitchTiles="stitch" seed="1"/>
+      <feColorMatrix values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1"/><feGaussianBlur stdDeviation=".45"/></filter></defs>
+    <rect width="1080" height="1920" fill="#000" filter="url(#grain)"/></svg>
+
+  <!-- >>> TROQUE: linhas de texto. data-base = linha de base no design (px do SVG); data-a = início (s); data-d = duração -->
+  <div class="t hg fx" data-a=".15" data-d="1.4" data-base="615">15.000 CHF</div>
+  <div class="t hg fx" data-a=".25" data-d="1.4" data-base="712">staatliche</div>
+  <div class="t hg fx" data-a=".35" data-d="1.4" data-base="809">Förderung für</div>
+  <div class="t hg fx" data-a=".45" data-d="1.4" data-base="906"><span class="hs">deine Solaranlage.</span></div>
+  <div class="t bd fx" data-a=".85" data-d="1.2" data-base="1036">Die Einmalvergütung vom Bund.</div>
+  <div class="t bd fx" data-a=".93" data-d="1.2" data-base="1096">Sicher für jedes Schweizer Eigenheim</div>
+  <div class="t bd fx" data-a="1.01" data-d="1.2" data-base="1157">zusätzlich zum Steuerabzug.</div>
+
+  <!-- botão: tudo dentro de #wipe abre da esquerda para a direita (borda macia) -->
+  <div class="btn" id="wipe">
+    <div class="pill"></div>
+    <div class="t lbl fx" data-a="1.65" data-d="1.0" data-dx="-14" data-dy="0" data-blur="8" data-base="1326">Jetzt Förderung berechnen</div>
+  </div>
+
+  <img id="ref" alt="">
+</div></div>
+
+<script>
+/* ===== CONFIG ===== */
+const CFG = {
+  W: 1080, H: 1920, DUR: 5,                    // px do design e duração (s)
+  grain_fps: 24,                               // o grão muda N vezes por segundo (0 = parado)
+  grid: { period: 72.3, x0: 69.8, ys: [], rows: 26 },   // célula de 72,3 px: anda uma célula em DUR s (loop sem emenda). ys vazio = linhas uniformes (rows)
+  wipe: { x0: 220, x1: 1120, feather: 150, at: 1.4, dur: 1.05 },        // wipe do botão (px do design) e tempo
+  bg: { a: [74, 80, 88], b: [36, 41, 47], cx: .5, cy: .66, rx: 1.0, ry: 1.0 }   // degradê radial do fundo (RGB)
+};
+
+/* ===== easing (cubic-bezier do CSS) ===== */
+function bez(x1,y1,x2,y2){const cx=3*x1,bx=3*(x2-x1)-cx,ax=1-cx-bx,cy=3*y1,by=3*(y2-y1)-cy,ay=1-cy-by;
+  const X=s=>((ax*s+bx)*s+cx)*s,Y=s=>((ay*s+by)*s+cy)*s,dX=s=>(3*ax*s+2*bx)*s+cx;
+  return x=>{if(x<=0)return 0;if(x>=1)return 1;let s=x;for(let i=0;i<8;i++){const e=X(s)-x;if(Math.abs(e)<1e-6)break;const d=dX(s);if(Math.abs(d)<1e-6)break;s-=e/d}
+    let lo=0,hi=1;if(s<0||s>1){s=x;while(lo<hi){const v=X(s);if(Math.abs(v-x)<1e-6)break;v<x?lo=s:hi=s;s=(lo+hi)/2}}return Y(s)}}
+const EASE_OUT=bez(.16,1,.3,1), EASE_IO=bez(.65,0,.35,1);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const prog=(t,a,d,e=EASE_OUT)=>e(clamp((t-a)/d));
+
+window.DUR = CFG.DUR;
+const U = CFG.W, $ = id => document.getElementById(id), stage = document.querySelector('.stage');
+const fx = [...document.querySelectorAll('.fx')].map(el => ({ el, a:+el.dataset.a, d:+el.dataset.d,
+  dx:+(el.dataset.dx||0), dy:+(el.dataset.dy??34), blur:+(el.dataset.blur||14), sc:+(el.dataset.sc||1), w:+(el.dataset.w||0) }));
+const wipe=$('wipe'), gridPath=$('gridPath'), seed=$('grainSeed');
+
+/* ===== posiciona cada linha pela linha de base do design (mede a fonte já carregada; offsetTop não sofre transform) ===== */
+let placed=false;
+function place(){
+  const k=stage.getBoundingClientRect().width/U;
+  document.querySelectorAll('[data-base]').forEach(el=>{
+    const sp=document.createElement('span'); sp.style.cssText='display:inline-block;width:0;height:0';
+    el.appendChild(sp); el.style.top='0px'; const off=sp.offsetTop; sp.remove();
+    el.style.top=(+el.dataset.base*k-off).toFixed(2)+'px';
+  }); placed=true;
+}
+
+/* ===== entrada: fade + blur vindo de um lado. ANTI-FLICKER: translate em pixels INTEIROS, blur some < 0,3 px,
+   e quando falta < 0,5 px trava no estado final (a cauda do easing, em frações de pixel, faz o texto pular de pixel em pixel) ===== */
+function apply(el,p,{dx=0,dy=0,blur=0,sc=1,w=0}={}){
+  const k=stage.getBoundingClientRect().width/U, amp=Math.max(Math.abs(dx),Math.abs(dy),blur,(1-sc)*w)*k;
+  if(amp>0&&(1-p)*amp<.5) p=1;
+  const b=blur*(1-p)*k;
+  el.style.opacity=clamp(p*1.5);
+  el.style.filter=b>.3?`blur(${b.toFixed(2)}px)`:'none';
+  el.style.transform=p>=1?'none':`translate(${Math.round(dx*(1-p)*k)}px,${Math.round(dy*(1-p)*k)}px) scale(${(sc+(1-sc)*p).toFixed(4)})`;
+}
+
+/* ===== fundo com dither TPDF (ruído somado ANTES de arredondar para 8 bits: sem faixas no degradê) ===== */
+function paintBg(){
+  const cv=$('bgc'), r=stage.getBoundingClientRect(), W=Math.round(r.width*(devicePixelRatio||1)), H=Math.round(r.height*(devicePixelRatio||1));
+  if(W<8||(cv.width===W&&cv.height===H)) return; cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d'), im=ctx.createImageData(W,H), d=im.data, B=CFG.bg;
+  const h=(x,y,s)=>{let v=Math.imul(x+1,0x27d4eb2d)^Math.imul(y+1,0x165667b1)^Math.imul(s+1,0x9e3779b1);v=Math.imul(v^v>>>15,0x85ebca6b);v=Math.imul(v^v>>>13,0xc2b2ae35);return(v^v>>>16)>>>0};
+  const tp=(x,y,s)=>{const v=h(x,y,s);return 1.7*((v&0xffff)/65536-(v>>>16)/65536)};
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const t=Math.min(1,Math.hypot(((x+.5)/W-B.cx)/B.rx,((y+.5)/H-B.cy)/B.ry)), o=(y*W+x)*4;
+    for(let c=0;c<3;c++) d[o+c]=Math.max(0,Math.min(255,Math.floor(B.a[c]+(B.b[c]-B.a[c])*t+.5+tp(x,y,c+1))));
+    d[o+3]=255;
+  }
+  ctx.putImageData(im,0,0);
+}
+
+/* ===== grid: linhas verticais andando para a esquerda (d recalculado; o degradê do traço fica parado) ===== */
+function drawGrid(t){
+  const G=CFG.grid; if(!G){gridPath.setAttribute('d','');return}
+  const shift=G.period*(t/CFG.DUR), ys=G.ys.length?G.ys:Array.from({length:G.rows+1},(_,i)=>+(i*CFG.H/G.rows).toFixed(2));
+  let d=''; for(const y of ys) d+=`M-3 ${y}L${CFG.W+3} ${y}`;
+  for(let i=0;i<=Math.ceil(CFG.W/G.period)+1;i++){const x=(G.x0+i*G.period-shift).toFixed(2); d+=`M${x} ${CFG.H}L${x} 0`}
+  gridPath.setAttribute('d',d);
+}
+
+/* ===== quadro ===== */
+window.render=function(t){
+  if(!placed&&document.fonts.status==='loaded') place();
+  paintBg(); drawGrid(t);
+  if(CFG.grain_fps>0) seed.setAttribute('seed',1+Math.floor(t*CFG.grain_fps));
+  for(const f of fx) apply(f.el,prog(t,f.a,f.d),f);
+  const W=CFG.wipe, r=prog(t,W.at,W.dur,EASE_IO), E=W.x0+(W.x1-W.x0)*r;
+  wipe.style.webkitMaskImage=wipe.style.maskImage=r>=1?'none':`linear-gradient(90deg,#000 ${((E-W.feather)/U*100).toFixed(3)}%,transparent ${(E/U*100).toFixed(3)}%)`;
+};
+
+/* ===== preview (relógio próprio, loop) · ?t= congela · ?ref= sobrepõe o design original ===== */
+let raf; const Q=new URLSearchParams(location.search), at=Q.get('t');
+if(Q.get('ref')!==null){ $('ref').src=Q.get('ref')||'ref.svg'; $('f').classList.add('showref'); }
+document.fonts.ready.then(()=>{ place(); paintBg(); if(at!==null) render(+at); });
+if(at!==null) render(+at);
+else { const t0=performance.now(); (function loop(){ render(((performance.now()-t0)/1000)%CFG.DUR); raf=requestAnimationFrame(loop); })(); }
+</script>
+</body>
+</html>
